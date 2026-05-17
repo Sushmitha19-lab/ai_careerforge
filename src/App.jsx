@@ -4,9 +4,16 @@
 // ======================================================
 
 // IMPORT REACT HOOKS
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+  fetch("http://localhost:5000")
+    .then((res) => res.text())
+    .then((data) => {
+      console.log(data);
+    });
+}, []);
 
   // ======================================================
   // QUESTIONS DATABASE
