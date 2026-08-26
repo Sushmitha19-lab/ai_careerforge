@@ -1,122 +1,44 @@
-import React from "react";
-
-const companyData = {
-  "Artificial Intelligence & ML": [
-    ["Google", "AI / ML Engineer"],
-    ["Microsoft", "AI Engineer"],
-    ["Amazon", "Machine Learning"],
-    ["NVIDIA", "AI / Deep Learning"],
-    ["IBM", "AI & Data"],
-    ["Adobe", "ML Engineer"],
-    ["Infosys", "AI / ML"],
-    ["TCS", "AI & Analytics"],
-    ["Accenture", "AI Engineering"],
-    ["Wipro", "AI / Data"],
-  ],
-
-  "Data Science": [
-    ["Google", "Data Scientist"],
-    ["Microsoft", "Data Analyst"],
-    ["Amazon", "Data Science"],
-    ["IBM", "Data Scientist"],
-    ["Adobe", "Data Science"],
-    ["Walmart", "Data Analyst"],
-    ["Deloitte", "Analytics"],
-    ["Infosys", "Data Science"],
-    ["Accenture", "Analytics"],
-    ["TCS", "Data & AI"],
-  ],
-
-  "Web Development": [
-    ["Google", "Software Engineer"],
-    ["Microsoft", "Frontend Engineer"],
-    ["Amazon", "Software Development"],
-    ["Adobe", "Web Engineer"],
-    ["Meta", "Frontend Engineer"],
-    ["Walmart", "Web Developer"],
-    ["Infosys", "Full Stack"],
-    ["TCS", "Web Development"],
-    ["Accenture", "Full Stack"],
-    ["Wipro", "Web Developer"],
-  ],
-
-  "Cyber Security": [
-    ["Microsoft", "Security Engineer"],
-    ["Google", "Security Engineer"],
-    ["IBM", "Cyber Security"],
-    ["Amazon", "Security"],
-    ["Cisco", "Network Security"],
-    ["Deloitte", "Cyber Risk"],
-    ["Accenture", "Cyber Security"],
-    ["TCS", "Security Analyst"],
-    ["Wipro", "Cyber Security"],
-    ["Infosys", "Security"],
-  ],
-
-  "Cloud Computing": [
-    ["Amazon", "Cloud Engineer"],
-    ["Microsoft", "Azure Engineer"],
-    ["Google", "Cloud Engineer"],
-    ["IBM", "Cloud"],
-    ["Oracle", "Cloud Engineer"],
-    ["Cisco", "Cloud Networking"],
-    ["Accenture", "Cloud"],
-    ["Deloitte", "Cloud Consulting"],
-    ["Infosys", "Cloud"],
-    ["TCS", "Cloud Engineering"],
-  ],
-
-  "Software Engineering": [
-    ["Google", "Software Engineer"],
-    ["Microsoft", "Software Engineer"],
-    ["Amazon", "SDE"],
-    ["Adobe", "Software Engineer"],
-    ["Meta", "Software Engineer"],
-    ["IBM", "Software Developer"],
-    ["Infosys", "Software Engineer"],
-    ["TCS", "Developer"],
-    ["Accenture", "Software Engineer"],
-    ["Wipro", "Developer"],
-  ],
-
-  "Computer Networks": [
-    ["Cisco", "Network Engineer"],
-    ["Juniper", "Network Engineer"],
-    ["Microsoft", "Network Engineer"],
-    ["Amazon", "Network Engineer"],
-    ["Google", "Network Engineer"],
-    ["IBM", "Network Specialist"],
-    ["TCS", "Network Engineer"],
-    ["Infosys", "Network Engineer"],
-    ["Wipro", "Network Engineer"],
-    ["Accenture", "Network Engineer"],
-  ],
-
-  "Database Systems": [
-    ["Oracle", "Database Engineer"],
-    ["Microsoft", "Database Engineer"],
-    ["Amazon", "Database"],
-    ["Google", "Database"],
-    ["IBM", "Database"],
-    ["Adobe", "Database"],
-    ["TCS", "Database"],
-    ["Infosys", "Database"],
-    ["Accenture", "Data Engineering"],
-    ["Wipro", "Database"],
-  ],
-};
+import React, { useEffect, useState } from "react";
 
 function Companies({
   course,
   onBack,
   onSelectCompany,
 }) {
-  const companies =
-    companyData[course?.name] ||
-    companyData["Artificial Intelligence & ML"];
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!course?.id) {
+      setError("No course selected.");
+      setLoading(false);
+      return;
+    }
+
+    fetch(`http://localhost:5000/api/courses/${course.id}/companies`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load companies");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setCompanies(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Company loading error:", err);
+        setError("Unable to load companies.");
+        setLoading(false);
+      });
+  }, [course]);
 
   return (
     <div className="inner-page">
+
+      {/* HEADER */}
 
       <header className="inner-header">
 
@@ -128,12 +50,21 @@ function Companies({
         </button>
 
         <div className="mini-brand">
-          <div className="brand-mark">C</div>
-          <strong>CareerForge</strong>
+
+          <div className="brand-mark">
+            C
+          </div>
+
+          <strong>
+            CareerForge
+          </strong>
+
         </div>
 
       </header>
 
+
+      {/* CONTENT */}
 
       <main className="inner-content">
 
@@ -141,9 +72,11 @@ function Companies({
           STEP 02 · COMPANY DISCOVERY
         </p>
 
+
         <h1 className="page-title">
-          Companies for {course?.name}
+          Companies for {course?.name || "your course"}
         </h1>
+
 
         <p className="page-subtitle">
           Choose a company to explore its interview
@@ -151,25 +84,59 @@ function Companies({
         </p>
 
 
-        <div className="company-count">
-          {companies.length} companies available
-        </div>
+        {/* LOADING */}
+
+        {loading && (
+          <p
+            style={{
+              marginTop: "40px",
+              color: "#7d858a",
+            }}
+          >
+            Loading companies...
+          </p>
+        )}
 
 
-        <div className="company-grid">
+        {/* ERROR */}
 
-          {companies.map((item, index) => {
+        {error && (
+          <p
+            style={{
+              marginTop: "40px",
+              color: "#e8755f",
+            }}
+          >
+            {error}
+          </p>
+        )}
 
-            const [name, role] = item;
 
-            return (
+        {/* COMPANY COUNT */}
+
+        {!loading && !error && (
+          <div className="company-count">
+            {companies.length} companies available
+          </div>
+        )}
+
+
+        {/* COMPANY CARDS */}
+
+        {!loading && !error && (
+
+          <div className="company-grid">
+
+            {companies.map((company, index) => (
+
               <button
                 className="company-card"
-                key={name}
+                key={company.id}
                 onClick={() =>
                   onSelectCompany({
-                    name,
-                    role,
+                    ...company,
+                    courseId: course.id,
+                    courseName: course.name,
                   })
                 }
               >
@@ -177,28 +144,39 @@ function Companies({
                 <div className="company-top">
 
                   <div className="company-logo">
-                    {name.charAt(0)}
+                    {company.name?.charAt(0)}
                   </div>
 
                   <span>
-                    0{index + 1}
+                    {String(index + 1).padStart(2, "0")}
                   </span>
 
                 </div>
 
-                <h2>{name}</h2>
 
-                <p>{role}</p>
+                <h2>
+                  {company.name}
+                </h2>
+
+
+                <p>
+                  {company.industry ||
+                    company.description ||
+                    "Career opportunity"}
+                </p>
+
 
                 <strong>
                   Prepare for this company →
                 </strong>
 
               </button>
-            );
-          })}
 
-        </div>
+            ))}
+
+          </div>
+
+        )}
 
       </main>
 

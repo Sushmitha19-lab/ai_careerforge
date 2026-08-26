@@ -1,71 +1,38 @@
-import React from "react";
-
-const courses = [
-  {
-    name: "Artificial Intelligence & ML",
-    code: "AI / ML",
-    icon: "✦",
-    description:
-      "Artificial intelligence, machine learning and intelligent systems.",
-  },
-  {
-    name: "Data Science",
-    code: "DATA",
-    icon: "◈",
-    description:
-      "Statistics, analytics, visualization and data-driven solutions.",
-  },
-  {
-    name: "Web Development",
-    code: "WEB",
-    icon: "⌘",
-    description:
-      "Modern frontend, backend and full-stack application development.",
-  },
-  {
-    name: "Cyber Security",
-    code: "CYBER",
-    icon: "◇",
-    description:
-      "Networks, ethical hacking, security and cyber defence.",
-  },
-  {
-    name: "Cloud Computing",
-    code: "CLOUD",
-    icon: "☁",
-    description:
-      "Cloud platforms, infrastructure, deployment and distributed systems.",
-  },
-  {
-    name: "Software Engineering",
-    code: "SWE",
-    icon: "▣",
-    description:
-      "Programming, software design and engineering practices.",
-  },
-  {
-    name: "Computer Networks",
-    code: "NETWORK",
-    icon: "⌁",
-    description:
-      "Networking protocols, systems, architecture and troubleshooting.",
-  },
-  {
-    name: "Database Systems",
-    code: "DATABASE",
-    icon: "▤",
-    description:
-      "SQL, database design, management and data technologies.",
-  },
-];
+import React, { useEffect, useState } from "react";
 
 function CourseSelection({
   student,
   onBack,
   onSelectCourse,
 }) {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/courses")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load courses");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        setCourses(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Course loading error:", err);
+        setError("Unable to load courses.");
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="inner-page">
+
+      {/* HEADER */}
 
       <header className="inner-header">
 
@@ -77,12 +44,21 @@ function CourseSelection({
         </button>
 
         <div className="mini-brand">
-          <div className="brand-mark">C</div>
-          <strong>CareerForge</strong>
+
+          <div className="brand-mark">
+            C
+          </div>
+
+          <strong>
+            CareerForge
+          </strong>
+
         </div>
 
       </header>
 
+
+      {/* CONTENT */}
 
       <main className="inner-content">
 
@@ -90,9 +66,11 @@ function CourseSelection({
           STEP 01 · CHOOSE YOUR PATH
         </p>
 
+
         <h1 className="page-title">
           What do you want to prepare for?
         </h1>
+
 
         <p className="page-subtitle">
           Hi {student?.name || "there"}. Select a career
@@ -101,45 +79,79 @@ function CourseSelection({
         </p>
 
 
-        <div className="course-grid">
+        {/* LOADING */}
 
-          {courses.map((course, index) => (
+        {loading && (
+          <p style={{ marginTop: "40px", color: "#7d858a" }}>
+            Loading courses...
+          </p>
+        )}
 
-            <button
-              className="course-card"
-              key={course.name}
-              onClick={() => onSelectCourse(course)}
-            >
 
-              <span className="course-number">
-                0{index + 1}
-              </span>
+        {/* ERROR */}
 
-              <div className="course-icon">
-                {course.icon}
-              </div>
+        {error && (
+          <p style={{ marginTop: "40px", color: "#e8755f" }}>
+            {error}
+          </p>
+        )}
 
-              <span className="course-code">
-                {course.code}
-              </span>
 
-              <h2>
-                {course.name}
-              </h2>
+        {/* COURSES */}
 
-              <p>
-                {course.description}
-              </p>
+        {!loading && !error && (
 
-              <strong>
-                Explore companies →
-              </strong>
+          <div className="course-grid">
 
-            </button>
+            {courses.map((course, index) => (
 
-          ))}
+              <button
+                className="course-card"
+                key={course.id}
+                onClick={() => onSelectCourse(course)}
+              >
 
-        </div>
+                <span className="course-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+
+
+                <div className="course-icon">
+
+                  {index === 0 && "✦"}
+                  {index === 1 && "◈"}
+                  {index === 2 && "⌘"}
+                  {index === 3 && "◇"}
+
+                </div>
+
+
+                <span className="course-code">
+                  COURSE
+                </span>
+
+
+                <h2>
+                  {course.name}
+                </h2>
+
+
+                <p>
+                  {course.description}
+                </p>
+
+
+                <strong>
+                  Explore companies →
+                </strong>
+
+              </button>
+
+            ))}
+
+          </div>
+
+        )}
 
       </main>
 
