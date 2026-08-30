@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import catalog from "../data/catalog.json";
+import { fetchJson } from "../utils/fetchJson";
 
 function Companies({
   course,
@@ -7,32 +9,43 @@ function Companies({
 }) {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (!course?.id) {
-      setError("No course selected.");
+      setNotice("No course selected.");
       setLoading(false);
       return;
     }
 
-    fetch(`http://localhost:5000/api/courses/${course.id}/companies`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load companies");
-        }
+    let cancelled = false;
 
-        return response.json();
-      })
+    fetchJson(`/api/courses/${course.id}/companies`)
       .then((data) => {
-        setCompanies(data);
+        if (cancelled) {
+          return;
+        }
+        const fallback = catalog.companiesByCourseId[String(course.id)] || [];
+        setCompanies(Array.isArray(data) && data.length ? data : fallback);
+        setNotice(
+          Array.isArray(data) && data.length
+            ? ""
+            : "Live company list was empty. Showing the built-in list."
+        );
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Company loading error:", err);
-        setError("Unable to load companies.");
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setCompanies(catalog.companiesByCourseId[String(course.id)] || []);
+        setNotice("Live catalog is offline. Showing the built-in company list.");
         setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [course]);
 
   return (
@@ -80,7 +93,7 @@ function Companies({
 
         <p className="page-subtitle">
           Choose a company to explore its interview
-          process, preparation resources and practice path.
+          process, round-by-round practice links, and mock.
         </p>
 
 
@@ -100,30 +113,21 @@ function Companies({
 
         {/* ERROR */}
 
-        {error && (
-          <p
-            style={{
-              marginTop: "40px",
-              color: "#e8755f",
-            }}
-          >
-            {error}
+        {notice && (
+          <p className="catalog-notice">
+            {notice}
           </p>
         )}
 
 
-        {/* COMPANY COUNT */}
-
-        {!loading && !error && (
+        {!loading && (
           <div className="company-count">
             {companies.length} companies available
           </div>
         )}
 
 
-        {/* COMPANY CARDS */}
-
-        {!loading && !error && (
+        {!loading && (
 
           <div className="company-grid">
 
