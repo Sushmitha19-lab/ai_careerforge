@@ -3,8 +3,10 @@ import React from "react";
 function Dashboard({
   student,
   onSelectCourse,
+  onPractice,
   onExploreCompanies,
   onPrepare,
+  onProgress,
   onLogout,
 }) {
   const name = student?.name || "Student";
@@ -63,7 +65,7 @@ function Dashboard({
 
           <button
             className="menu-item"
-            onClick={onPrepare}
+            onClick={onPractice}
           >
             <span>◉</span>
             Practice
@@ -75,16 +77,16 @@ function Dashboard({
             onClick={onPrepare}
           >
             <span>▤</span>
-            Resources
+            Guide
           </button>
 
 
           <button
             className="menu-item"
-            onClick={onPrepare}
+            onClick={onProgress}
           >
             <span>◌</span>
-            Progress
+            SkillBridge
           </button>
 
         </nav>
@@ -174,10 +176,10 @@ function Dashboard({
 
 
               <p className="intro-text">
-                CareerForge brings your course,
-                target companies, interview
-                preparation and learning resources
-                into one place.
+                CareerForge is an adaptive ML platform for
+                personalized placement preparation: 10 courses,
+                10 companies each, four interview rounds of 15 questions,
+                SkillBridge maps, and Career Compass hiring signals.
               </p>
 
             </div>
@@ -419,20 +421,52 @@ function Dashboard({
 
 
               <h3>
-                Prepare & Practice
+                Practice rounds
               </h3>
 
 
               <p>
-                Learn how to prepare, practice
-                effectively and improve your skills.
+                Aptitude, coding, technical, and HR
+                links for each course and company.
               </p>
 
 
               <button
-                onClick={onPrepare}
+                onClick={onPractice}
               >
-                Start preparing →
+                Open practice →
+              </button>
+
+            </article>
+
+
+            <article className="action-card">
+
+              <div className="card-number">
+                04
+              </div>
+
+
+              <div className="card-icon">
+                ◎
+              </div>
+
+
+              <h3>
+                SkillBridge & Compass
+              </h3>
+
+
+              <p>
+                Prerequisite maps, week-wise coding,
+                and the company requirement detector.
+              </p>
+
+
+              <button
+                onClick={onProgress}
+              >
+                Open Career Compass →
               </button>
 
             </article>

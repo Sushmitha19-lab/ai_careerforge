@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import catalog from "../data/catalog.json";
+import { COURSE_ICONS } from "../data/tracks";
+import { fetchJson } from "../utils/fetchJson";
 
 function CourseSelection({
   student,
@@ -7,26 +10,36 @@ function CourseSelection({
 }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/courses")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load courses");
-        }
+    let cancelled = false;
 
-        return response.json();
-      })
+    fetchJson("/api/courses")
       .then((data) => {
-        setCourses(data);
+        if (cancelled) {
+          return;
+        }
+        setCourses(Array.isArray(data) && data.length ? data : catalog.courses);
+        setNotice(
+          Array.isArray(data) && data.length
+            ? ""
+            : "Live catalog was empty. Showing the built-in course list."
+        );
         setLoading(false);
       })
-      .catch((err) => {
-        console.error("Course loading error:", err);
-        setError("Unable to load courses.");
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setCourses(catalog.courses);
+        setNotice("Live catalog is offline. Showing the built-in course list.");
         setLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -74,8 +87,8 @@ function CourseSelection({
 
         <p className="page-subtitle">
           Hi {student?.name || "there"}. Select a career
-          domain and we'll show you companies and
-          preparation paths relevant to it.
+          domain. Each path has 10 companies and four
+          interview rounds.
         </p>
 
 
@@ -90,18 +103,16 @@ function CourseSelection({
 
         {/* ERROR */}
 
-        {error && (
-          <p style={{ marginTop: "40px", color: "#e8755f" }}>
-            {error}
+        {notice && (
+          <p className="catalog-notice">
+            {notice}
           </p>
         )}
 
 
-        {/* COURSES */}
+        {!loading && (
 
-        {!loading && !error && (
-
-          <div className="course-grid">
+          <div className="course-grid ten-up">
 
             {courses.map((course, index) => (
 
@@ -116,14 +127,9 @@ function CourseSelection({
                 </span>
 
 
-                <div className="course-icon">
-
-                  {index === 0 && "✦"}
-                  {index === 1 && "◈"}
-                  {index === 2 && "⌘"}
-                  {index === 3 && "◇"}
-
-                </div>
+                  <div className="course-icon">
+                    {COURSE_ICONS[index] || "✦"}
+                  </div>
 
 
                 <span className="course-code">
