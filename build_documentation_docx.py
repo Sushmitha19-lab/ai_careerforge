@@ -597,6 +597,75 @@ def build():
     )
     add_caption(doc, "Table 5. ML and scoring modules")
 
+    add_heading_custom(doc, "2.7 Training datasets and model files", 2)
+    add_body(
+        doc,
+        "CareerForge trains two sklearn models from CSV files in ml_service/. "
+        "Face detection is not trained here: YuNet is a pretrained OpenCV ONNX file. "
+        "There are no wav/mp3 corpora and no labeled webcam image sets. "
+        "See also ml_service/TRAINING_DATA.md.",
+    )
+    add_table(
+        doc,
+        ["File", "Rows", "Kind", "Used by", "Output"],
+        [
+            [
+                "skill_assessment_data.csv",
+                "20",
+                "Hand-written labels",
+                "train_model.py",
+                "skill_assessment_model.pkl, label_encoder.pkl",
+            ],
+            [
+                "voice_fluency_data.csv",
+                "480",
+                "Synthetic features (seed 42)",
+                "train_voice_model.py",
+                "voice_fluency_model.pkl, voice_fluency_meta.pkl",
+            ],
+            [
+                "face_detection_yunet_2023mar.onnx",
+                "—",
+                "Pretrained YuNet",
+                "emotion_analyzer.py",
+                "Not trained in this repo",
+            ],
+        ],
+        col_widths=[4.2, 1.6, 3.4, 3.4, 4.2],
+    )
+    add_caption(doc, "Table 6. Training data and model artifacts")
+    add_mixed(
+        doc,
+        [
+            ("Skill data: ", True),
+            (
+                "20 rows. Features technical_score (45–95), communication_score (50–92), "
+                "problem_solving (42–96). Labels Strong 7, Average 7, Weak 6. "
+                "RandomForestClassifier with 100 trees, 80/20 split.",
+                False,
+            ),
+        ],
+    )
+    add_mixed(
+        doc,
+        [
+            ("Voice data: ", True),
+            (
+                "480 synthetic rows from five profiles (fluent 22%, average 28%, hesitant 20%, "
+                "rushed 15%, inaccurate 15%). Eleven input features plus fluency_score and "
+                "accuracy_score labels from teacher functions plus noise. Random Forest and "
+                "Gradient Boosting compete; the higher average R² model is saved.",
+                False,
+            ),
+        ],
+    )
+    add_body(
+        doc,
+        "Shipped pickles: skill_assessment_model.pkl, label_encoder.pkl, "
+        "voice_fluency_model.pkl, voice_fluency_meta.pkl. Retrain with "
+        "py -3 train_model.py and py -3 train_voice_model.py from ml_service/.",
+    )
+
     # 3
     add_heading_custom(doc, "3. Sequence flows", 1)
     add_body(
@@ -1008,7 +1077,12 @@ def build():
         "    voice_features.py       # fluency / accuracy / accent features\n"
         "    train_model.py          # skill Random Forest\n"
         "    train_voice_model.py    # voice Random Forest / GBR\n"
-        "    models/                 # YuNet ONNX\n"
+        "    TRAINING_DATA.md        # dataset and model inventory\n"
+        "    skill_assessment_data.csv\n"
+        "    voice_fluency_data.csv\n"
+        "    skill_assessment_model.pkl / label_encoder.pkl\n"
+        "    voice_fluency_model.pkl / voice_fluency_meta.pkl\n"
+        "    models/                 # YuNet ONNX (pretrained)\n"
         "  docs/figures/            # architecture and block-diagram PNGs\n"
         "  DOCUMENTATION.md\n"
         "  CareerForge_Documentation.docx",

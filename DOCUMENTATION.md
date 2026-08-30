@@ -1,6 +1,6 @@
 # CareerForge — AI Interview Career Support
 
-**Project document** covering introduction, architecture diagrams, block diagrams, sequence flows, how to run on another computer, usage, and trade-offs.
+**Project document** covering introduction, architecture diagrams, block diagrams, sequence flows, **ML training datasets and model files**, how to run on another computer, usage, and trade-offs.
 
 ---
 
@@ -304,6 +304,69 @@ flowchart TB
 **Voice model** (`train_voice_model.py`): generates labeled feature rows, trains **Random Forest** and **Gradient Boosting** (`MultiOutputRegressor`), and saves the better average R² model as `voice_fluency_model.pkl`. If the pickle is missing, `/analyze-voice` falls back to a heuristic scorer.
 
 **Camera model**: OpenCV **YuNet** (`models/face_detection_yunet_2023mar.onnx`). Landmarks drive looking-away, looking-down, smile proxy, and fidgeting. Face count and brightness drive malpractice flags.
+
+### 2.7 Training datasets and model files
+
+CareerForge trains **two** sklearn models from CSV files in `ml_service/`. Face detection is **not** trained here: YuNet is a pretrained OpenCV ONNX file. There are no wav/mp3 corpora and no labeled webcam image sets in this repo. A short inventory also lives in `ml_service/TRAINING_DATA.md`.
+
+| File | Rows | Kind | Used by | Output artifact |
+| --- | ---: | --- | --- | --- |
+| `ml_service/skill_assessment_data.csv` | 20 | Hand-written labeled table | `train_model.py` | `skill_assessment_model.pkl`, `label_encoder.pkl` |
+| `ml_service/voice_fluency_data.csv` | 480 | Synthetic feature rows (seed 42) | `train_voice_model.py` (written, then fit) | `voice_fluency_model.pkl`, `voice_fluency_meta.pkl` |
+| `ml_service/models/face_detection_yunet_2023mar.onnx` | — | Pretrained OpenCV YuNet (not trained in this project) | `emotion_analyzer.py` | — |
+
+Retrain from `ml_service/`:
+
+```text
+py -3 train_model.py
+py -3 train_voice_model.py
+```
+
+Both scripts use `train_test_split(..., test_size=0.2, random_state=42)` (80% train / 20% test).
+
+#### Skill assessment data (`skill_assessment_data.csv`)
+
+Hand-authored **20** examples mapping three 0–100 scores to a class. This is a small teaching set so `/ml/predict` can return Strong / Average / Weak.
+
+| Column | Role | Range in file |
+| --- | --- | --- |
+| `technical_score` | Feature | 45–95 (mean 70.0) |
+| `communication_score` | Feature | 50–92 (mean 70.3) |
+| `problem_solving` | Feature | 42–96 (mean 67.0) |
+| `skill_level` | Label | Strong 7, Average 7, Weak 6 |
+
+`LabelEncoder` maps the three strings to integers. `RandomForestClassifier(n_estimators=100, random_state=42)` is fit on the encoded labels.
+
+#### Voice fluency data (`voice_fluency_data.csv`)
+
+**480** synthetic rows generated in `train_voice_model.py` (`generate_training_data(rows=480, seed=42)`), then saved to CSV and used for training. No real interview recordings are stored.
+
+Each row is drawn from one of five speaker profiles (probabilities): fluent 22%, average 28%, hesitant 20%, rushed 15%, inaccurate 15%. Profiles set ranges for pace, fillers, unique-word ratio, ASR confidence, repetition, pauses, and keyword/pattern scores.
+
+**Input features** (11 columns in `voice_features.py` as `FEATURE_COLUMNS`): `word_count`, `duration_seconds`, `words_per_minute`, `filler_ratio`, `unique_ratio`, `avg_word_length`, `speech_confidence`, `repetition_ratio`, `pause_count`, `keyword_score`, `pattern_score`.
+
+**Labels** (teacher functions plus Gaussian noise, clipped to 0–100):
+
+| Column | How it is labeled |
+| --- | --- |
+| `fluency_score` | WPM closeness to 145, low fillers, unique ratio, confidence, low repetition, pause penalty (`teacher_fluency`) + N(0, 3.2) |
+| `accuracy_score` | 48% keywords + 32% patterns + 20% confidence; ×0.72 if `word_count` < 8 (`teacher_accuracy`) + N(0, 3.0) |
+
+In the saved CSV, fluency averages **70.5** (31.9–98.1) and accuracy **60.5** (14.8–100).
+
+Two `MultiOutputRegressor` candidates are trained: Random Forest (160 trees, max depth 12) and Gradient Boosting (180 trees, learning rate 0.08, max depth 3). The **higher average R²** on the 20% hold-out is saved as `voice_fluency_model.pkl`. If that pickle is missing, `/analyze-voice` uses the heuristic scorer.
+
+#### Shipped model files
+
+| File | What it is |
+| --- | --- |
+| `skill_assessment_model.pkl` | Trained Random Forest skill classifier |
+| `label_encoder.pkl` | Strong / Average / Weak encoder |
+| `voice_fluency_model.pkl` | Trained fluency + accuracy regressor |
+| `voice_fluency_meta.pkl` | Winner algorithm name and feature list |
+| `models/face_detection_yunet_2023mar.onnx` | Pretrained YuNet face detector |
+
+Interview questions (`src/data/interviewBank.js`) and `backend/data/*.json` are **not** ML training sets.
 
 ---
 
@@ -734,7 +797,14 @@ ai_careerforge/
     voice_features.py       # fluency / accuracy / accent features
     train_model.py          # skill Random Forest
     train_voice_model.py    # voice Random Forest / GBR
-    models/                 # YuNet ONNX
+    TRAINING_DATA.md        # dataset and model inventory
+    skill_assessment_data.csv   # 20 labeled skill rows
+    voice_fluency_data.csv      # 480 synthetic voice rows
+    skill_assessment_model.pkl
+    label_encoder.pkl
+    voice_fluency_model.pkl
+    voice_fluency_meta.pkl
+    models/                 # YuNet ONNX (pretrained, not trained here)
   DOCUMENTATION.md
   CareerForge_Documentation.docx
 ```
